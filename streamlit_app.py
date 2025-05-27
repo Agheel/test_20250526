@@ -1,151 +1,106 @@
 import streamlit as st
+
+col1,col2,col3 = st.columns([4,4,4])
+# 공간을 2:3 으로 분할하여 col1과 col2라는 이름을 가진 컬럼을 생성합니다.  
+
+st.sidebar.title('this is sidebar')
+st.sidebar.checkbox('체크박스도 넣을 수 있다.')
+
+with col1 :
+  # column 1 에 담을 내용
+  st.title('여기는 1 열 ')
+with col3:
+  st.title('여기는 3 열 ')
+with col2 :
+  # column 2 에 담을 내용
+  st.title('여기는 2열')
+  st.checkbox('2열 체크박스 1 ')
+
+
+# with 구문 말고 다르게 사용 가능 
+col1.subheader(' 1열 서브헤더 !! ')
+col1.write("안녕하세요")
+col2.checkbox('2열 체크박스 2 ') 
+
+#=>위에 with col2: 안의 내용과 같은 기능을합니다
+
+st.title("📦 Streamlit Container 예제")
+
+# 컨테이너 1 - 요약 영역
+with st.container():
+    st.subheader("1️⃣ KPI 요약")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("매출", "₩120,000")
+    col2.metric("주문", "58건")
+    col3.metric("고객 수", "34명")
+
+# 구분선
+st.markdown("---")
+
+# 컨테이너 2 - 필터 + 표 영역
+with st.container():
+    st.subheader("2️⃣ 필터링 & 데이터")
+
+    # 사이드 필터 (예시)
+    category = st.selectbox("카테고리 선택", ["전체", "전자", "가구", "사무"])
+
+    # 샘플 데이터 출력
+    import pandas as pd
+    df = pd.DataFrame({
+        "제품명": ["노트북", "책상", "펜"],
+        "카테고리": ["전자", "가구", "사무"],
+        "매출": [100000, 20000, 3000]
+    })
+
+    if category != "전체":
+        df = df[df["카테고리"] == category]
+
+    st.dataframe(df)
+
+# 컨테이너 3 - 하단 메모
+with st.container():
+    st.subheader("3️⃣ 메모 작성")
+    st.text_area("학습 또는 회의 메모를 입력하세요")
+
+users = [{"id": 1, "name": "홍길동"}, {"id": 2, "name": "이몽룡"}]
+selected_user = st.selectbox(
+    "사용자 선택",
+    users,
+    format_func=lambda x: f"{x['name']} (ID: {x['id']})"
+)
+st.write("선택한 사용자 ID:", selected_user['id'])
+
+import plotly.express as px
 import pandas as pd
-import math
-from pathlib import Path
 
-# Set the title and favicon that appear in the Browser's tab bar.
-st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
-)
+# 샘플 데이터
+df = pd.DataFrame({
+    "과일": ["사과", "바나나", "체리", "사과", "바나나", "체리"],
+    "판매량": [10, 15, 8, 12, 18, 6],
+    "지점": ["서울", "서울", "서울", "부산", "부산", "부산"]
+})
 
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
+# plotly 그래프 생성
+fig = px.bar(df, x="과일", y="판매량", color="지점", barmode="group", title="과일별 판매량")
 
-@st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
+# Streamlit에 출력
+st.plotly_chart(fig, use_container_width=True)
 
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
-    """
+import time
 
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
+st.write("황여준")
 
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
+progress = st.progress(0)
 
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
-    )
+for i in range(101):
+    time.sleep(0.03)  # 작업 시뮬레이션
+    progress.progress(i)
 
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
+st.success("완료되었습니다!")
 
-    return gdp_df
+st.write("데이터를 불러옵니다...")
 
-gdp_df = get_gdp_data()
+with st.spinner("잠시만 기다려 주세요..."):
+    time.sleep(5)  # 실제 작업 시뮬레이션
 
-# -----------------------------------------------------------------------------
-# Draw the actual page
-
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
-
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
-
-# Add some spacing
-''
-''
-
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
-
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
-
-countries = gdp_df['Country Code'].unique()
-
-if not len(countries):
-    st.warning("Select at least one country")
-
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
-
-''
-''
-''
-
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
-
-st.header('GDP over time', divider='gray')
-
-''
-
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
-
-''
-''
-
-
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
-
-st.header(f'GDP in {to_year}', divider='gray')
-
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
-        else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
-
-        st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
-        )
+st.success("데이터 로딩 완료!")
